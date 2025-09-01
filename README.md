@@ -7,3 +7,10 @@
 
 
 - `report.pdf`: Un informe detallado que describe el análisis preliminar del modelo, la descripción del problema, el conjunto de datos, la implementación del modelo y las conclusiones.
+
+💻 Requisitos
+Para ejecutar el código, necesitarás las siguientes bibliotecas de Python:
+
+- numpy
+- pandas
+- matplotlib
