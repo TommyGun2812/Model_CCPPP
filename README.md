@@ -1,6 +1,8 @@
 # Model_CCPPP
 
-- `main.py`: Contiene el código Python para el modelo de regresión lineal. Incluye funciones para la hipótesis, el costo (Error Cuadrático Medio) y el descenso de gradiente para la actualización de parámetros.
+- `lr_manual_implemetation.py`: Implementación de un modelo de regresión lineal desde cero. 
+
+- `lr_framework_implemetation.py`: Implementación de un modelo de regresión lienal con uso de framework.
 
 
 - `Data Set`: El conjunto de datos original utilizado para el entrenamiento y la prueba del modelo.
@@ -14,3 +16,5 @@ Para ejecutar el código, necesitarás las siguientes bibliotecas de Python:
 - numpy
 - pandas
 - matplotlib
+
+__NOTA__: Para poder ejecutar las implementaciónes en código de manera correcta, es necesario incluir el archivo `FOLDS5x2_pp.csv` dentro del mismo directorio en donde se pretende ejecutar ya sea `lr_framework_implemetation.py` o `lr_manual_implemetation.py`. El archivo `FOLDS5x2_pp.csv`, se encuentra dentro del directorio `Data Set` de este repositorio. 
