@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
     #-------DATA LOADING-------#
     columns = ["AT", "V", "AP", "RH", "PE"]
-    df = pd.read_csv("./CCPP/Folds5x2_pp_copy.csv", names=columns)
+    df = pd.read_csv("./Folds5x2_pp.csv", names=columns)
 
     #-------DATA TRANSFORMATION-------#
     # Splitting Features and Targets
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     # Features Standard Deviation
     at_std = df["AT"].std()
-    v_std  =  df["V"].std()
+    v_std  = df["V"].std()
     ap_std = df["AP"].std()
     rh_std = df["RH"].std()
     pe_std = df["PE"].std()
@@ -136,28 +136,37 @@ if __name__ == '__main__':
     target = (target - target_mean) / target_std
 
     #-------DATA SPLITTING-------#
-    train_set = features.iloc[0:2872, :] # Data's 70%
-    test_set  = features.iloc[2872:, : ] # Data's 30%
+    train_set = features.iloc[0:6698, :]  # Data's 70%
+    val_set   = features.iloc[6698:8611,] # Data's 20%
+    test_set  = features.iloc[8611:, : ]  # Data's 30%
 
     #-------DATA LABELS-------#
-    train_labels = target.iloc[0:2872]
-    test_labels  = target.iloc[2872: ] 
+    train_labels = target.iloc[0:6698]
+    val_labels   = target.iloc[6698:8611]
+    test_labels  = target.iloc[8611: ] 
 
     #-------HYPERPARAMETERS-------#
-    epoch   = 1000
-    bias    = 0.0
-    alfa    = 0.01
-    samples = train_set.to_numpy()
-    y       = train_labels.to_numpy()
-    theta   = np.zeros(features.shape[1])
-    error   = [] # Error list
+    epoch         = 1000
+    bias          = 0.0
+    alfa          = 0.01
+    samples_train = train_set.to_numpy()
+    samples_val   = val_set.to_numpy()
+    y_train       = train_labels.to_numpy()
+    y_val         = val_labels.to_numpy()
+    theta         = np.zeros(features.shape[1])
+    error_train   = [] # Error train list
+    error_val     = [] # Error val list
 
     #-------TRAINING LOOP-------#
     i = 0
-    while (i < epoch): 
-        error.append(cost_function(theta, samples, bias, y,))
+    while (i < epoch):
+        cost_train = cost_function(theta, samples_train, bias, y_train)
+        error_train.append(cost_train)
 
-        if error[-1] == 0: 
+        val_cost  = cost_function(theta, samples_val, bias, y_val)
+        error_val.append(val_cost)
+
+        if error_train[-1] <= 0.09: 
             break
 
         # Previous parameters
@@ -165,25 +174,68 @@ if __name__ == '__main__':
         bias_prev  = bias
 
         # Updating parameters
-        theta, bias = update_function(theta, samples, y, bias, alfa)
+        theta, bias = update_function(theta, samples_train, y_train, bias, alfa)
         
         print(f"Epoch {i+1}")
+        print(f"Train Error: {cost_train:.4f} | Val Error: {val_cost:.4f}")
         print(f"Previous theta: {theta_prev}, Previous bias: {bias_prev}")
         print(f"Updated  theta: {theta}, Updated  bias: {bias}\n")
         i += 1
     
+#-------TESTING MODEL-------#
+samples_test = test_set.to_numpy()
+y_test       = test_labels.to_numpy()
 
-    #-------TESTING MDOEL-------#
-    # Obtaining predictions with learned parameters
-    samples_test = test_set.to_numpy()
-    y_test       = test_labels.to_numpy()
+predictions_test = np.array([hyp_function(theta, x, bias) for x in samples_test])
 
-    predictions = np.array([hyp_function(theta, x, bias) for x in samples_test])
+# Calcular R²
+accuracy = r2_score(y_test, predictions_test)
+print(f"\nR² del modelo en test: {accuracy:.4f}")
 
-    # Calcular R²
-    accuracy = r2_score(y_test, predictions)
-    print(f"R² del modelo: {accuracy:.4f}")
+# Calcular error final en test
+test_cost = cost_function(theta, samples_test, bias, y_test)
+print(f"Error MSE en test: {test_cost:.4f}")
+  #-------PLOTTING-------#
 
-    # PLotting error evolution
-    training_plot(error)
-    plot_test_results(theta, bias, test_set, test_labels)
+# 1. Curvas de entrenamiento y validación
+plt.figure(figsize=(8,5))
+plt.plot(error_train, label="Train MSE", color="blue")
+plt.plot(error_val, label="Validation MSE", color="red")
+plt.title("Evolución del error durante el entrenamiento")
+plt.xlabel("Épocas")
+plt.ylabel("MSE")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# 2. Comparación Validación vs Test
+plt.figure(figsize=(8,5))
+plt.axhline(y=test_cost, color="green", linestyle="--", label=f"Test MSE={test_cost:.4f}")
+plt.plot(error_val, label="Validation MSE", color="red")
+plt.title("Error en validación vs test")
+plt.xlabel("Épocas")
+plt.ylabel("MSE")
+plt.legend()
+plt.grid(True)
+
+# 3. Resultados en test: predicciones vs valores reales
+plt.figure(figsize=(7,7))
+plt.scatter(y_test, predictions_test, alpha=0.5, color="purple")
+plt.plot([-3, 3], [-3, 3], color="black", linestyle="--", linewidth=2, label="Ideal y=x")
+plt.title("Predicciones vs Valores Reales (Test Set)")
+plt.xlabel("Valores reales (y_test)")
+plt.ylabel("Predicciones (ŷ)")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# 4. Comparación por instancias (Valores reales vs Predicciones)
+plt.figure(figsize=(10,6))
+plt.scatter(range(len(y_test)), y_test, color="blue", alpha=0.6, label="Valores reales")
+plt.scatter(range(len(predictions_test)), predictions_test, color="orange", alpha=0.6, label="Predicciones")
+plt.title("Comparación de Valores Reales vs Predicciones por Instancia (Test Set)")
+plt.xlabel("Índice de instancia (Test Set)")
+plt.ylabel("Valor estandarizado")
+plt.legend()
+plt.grid(True)
+plt.show()
