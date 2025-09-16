@@ -54,37 +54,6 @@ def update_function(params: list, samples: list, Y:list, bias, alfa):
 
     return params_new, bias_new
 
-
-### PLOTTING INFORMATION ###
-
-def training_plot(error: list):
-    plt.figure(figsize=(8,5))
-    plt.plot(error, color='blue', linewidth=2)
-    plt.title("Convergencia del MSE durante el entrenamiento")
-    plt.xlabel("Épocas")
-    plt.ylabel("MSE")
-    plt.grid(True)
-    plt.show()
-
-def plot_test_results(theta, bias, test_set, test_labels):
-    # Convertir a numpy arrays
-    samples_test = test_set.to_numpy()
-    y_test = test_labels.to_numpy()
-    
-    # Obtener predicciones
-    predictions = np.array([hyp_function(theta, x, bias) for x in samples_test])
-    
-    # Crear scatter plot
-    plt.figure(figsize=(7,7))
-    plt.scatter(y_test, predictions, alpha=0.5, color="purple")
-    plt.plot([-3,3], [-3,3], color="black", linestyle="--", linewidth=2)  # Línea ideal y=x
-    plt.title("Predicciones vs Valores Reales")
-    plt.xlabel("Valores reales")
-    plt.ylabel("Predicciones")
-    plt.grid(True)
-    plt.show()
-
-
 ### COEFFICIENT OF DETERMINATION ###
 def r2_score(y_true, y_pred):
     y_true = np.asarray(y_true)
@@ -148,11 +117,13 @@ if __name__ == '__main__':
     #-------HYPERPARAMETERS-------#
     epoch         = 1000
     bias          = 0.0
-    alfa          = 0.01
+    alfa          = 0.03
     samples_train = train_set.to_numpy()
     samples_val   = val_set.to_numpy()
+    samples_test  = test_set.to_numpy()
     y_train       = train_labels.to_numpy()
     y_val         = val_labels.to_numpy()
+    y_test        = test_labels.to_numpy()
     theta         = np.zeros(features.shape[1])
     error_train   = [] # Error train list
     error_val     = [] # Error val list
@@ -166,7 +137,7 @@ if __name__ == '__main__':
         val_cost  = cost_function(theta, samples_val, bias, y_val)
         error_val.append(val_cost)
 
-        if error_train[-1] <= 0.09: 
+        if error_train[-1] <= 0.0: 
             break
 
         # Previous parameters
@@ -181,20 +152,33 @@ if __name__ == '__main__':
         print(f"Previous theta: {theta_prev}, Previous bias: {bias_prev}")
         print(f"Updated  theta: {theta}, Updated  bias: {bias}\n")
         i += 1
-    
-#-------TESTING MODEL-------#
-samples_test = test_set.to_numpy()
-y_test       = test_labels.to_numpy()
 
+
+# ---- MÉTRICAS FINALES ---- #
+
+# Predicciones finales con parámetros entrenados
+predictions_train = np.array([hyp_function(theta, x, bias) for x in samples_train])
+predictions_val   = np.array([hyp_function(theta, x, bias) for x in samples_val])
 predictions_test = np.array([hyp_function(theta, x, bias) for x in samples_test])
 
-# Calcular R²
-accuracy = r2_score(y_test, predictions_test)
-print(f"\nR² del modelo en test: {accuracy:.4f}")
 
-# Calcular error final en test
-test_cost = cost_function(theta, samples_test, bias, y_test)
-print(f"Error MSE en test: {test_cost:.4f}")
+# MSE
+final_train_mse = cost_function(theta, samples_train, bias, y_train)
+final_val_mse   = cost_function(theta, samples_val, bias, y_val)
+final_test_mse  = cost_function(theta, samples_test, bias, y_test)
+
+
+# Calcular R²
+final_train_r2 = r2_score(y_train, predictions_train)
+final_val_r2   = r2_score(y_val, predictions_val)
+final_test_r2  = r2_score(y_test, predictions_test)
+
+# Mostrar resultados
+print("\n---- MÉTRICAS FINALES ----")
+print(f"Train MSE: {final_train_mse:.4f}    | Train R²: {final_train_r2:.4f}")
+print(f"Val   MSE: {final_val_mse:.4f}      | Val   R²: {final_val_r2:.4f}")
+print(f"Test  MSE: {final_test_mse:.4f}     | Test  R²: {final_test_r2:.4f}")
+
   #-------PLOTTING-------#
 
 # 1. Curvas de entrenamiento y validación
@@ -210,7 +194,7 @@ plt.show()
 
 # 2. Comparación Validación vs Test
 plt.figure(figsize=(8,5))
-plt.axhline(y=test_cost, color="green", linestyle="--", label=f"Test MSE={test_cost:.4f}")
+plt.axhline(y=final_test_mse, color="green", linestyle="--", label=f"Test MSE={final_test_mse:.4f}")
 plt.plot(error_val, label="Validation MSE", color="red")
 plt.title("Error en validación vs test")
 plt.xlabel("Épocas")
